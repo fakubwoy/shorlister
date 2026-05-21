@@ -283,9 +283,10 @@ body { background: var(--bg); color: var(--text); font-family: var(--mono); font
 <div class="toast" id="toast"></div>
 
 <script>
-const CANDIDATES = {{ candidates | tojson }};
-const USERNAME   = {{ username | tojson }};
-const ALL_USERS  = {{ all_users | tojson }};
+const CANDIDATES     = {{ candidates | tojson }};
+const USERNAME       = {{ username | tojson }};
+const ALL_USERS      = {{ all_users | tojson }};
+const GEMINI_API_KEY = {{ gemini_api_key | tojson }};
 
 /* ── State ── */
 let reviews = {};      // key → { reviews:{user→{status,ts,at}}, note }
@@ -611,17 +612,20 @@ async function runAI(key) {
   }
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514', max_tokens: 1000,
-        system: aiSystem,
-        messages: [{role:'user', content: aiContent}]
-      })
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: aiSystem }] },
+          contents: [{ role: 'user', parts: [{ text: aiContent }] }],
+          generationConfig: { maxOutputTokens: 1000 }
+        })
+      }
+    );
     const d = await res.json();
-    const text = d.content?.[0]?.text || 'Could not generate.';
+    const text = d.candidates?.[0]?.content?.parts?.[0]?.text || 'Could not generate.';
     if (el) el.textContent = text;
     /* Persist to server */
     await fetch(`/ai_review/${key}`, {

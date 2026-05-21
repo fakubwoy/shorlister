@@ -300,6 +300,7 @@ def index():
         username=session["username"],
         meta=db["meta"],
         all_users=list(USERS.keys()),
+        gemini_api_key=os.environ.get("GEMINI_API_KEY", ""),
     )
 
 @app.route("/candidate/<key>")
