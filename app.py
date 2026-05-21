@@ -105,6 +105,7 @@ def _parse_row(row):
         "design_tools": "",
         "design_decisions": "",
         "design_manufacturing": "",
+        "design_challenges": "",
         "design_cad_files": "",
         "design_renders": "",
         "design_video": "",
