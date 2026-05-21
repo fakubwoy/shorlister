@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CandidateDesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0f12;
+  --surface: #13161b;
+  --surface2: #181c23;
+  --border: #1f2430;
+  --border-light: #2a3040;
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --muted2: #4b5563;
+  --accent: #4f8ef7;
+  --accent-dim: rgba(79,142,247,0.12);
+  --shortlist: #1D9E75;
+  --shortlist-bg: rgba(29,158,117,0.12);
+  --maybe: #d97706;
+  --maybe-bg: rgba(217,119,6,0.12);
+  --reject: #e24b4a;
+  --reject-bg: rgba(226,75,74,0.12);
+  --serif: 'DM Serif Display', Georgia, serif;
+  --mono: 'DM Mono', 'Courier New', monospace;
+}
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 13px; display: flex; flex-direction: column; }
+
+/* ── Top Bar ── */
+.topbar {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; height: 50px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.logo { font-family: var(--serif); font-size: 18px; white-space: nowrap; }
+.logo span { color: var(--accent); font-style: italic; }
+.topbar-stats { display: flex; gap: 14px; align-items: center; flex: 1; justify-content: center; }
+.tstat { font-size: 11px; display: flex; align-items: center; gap: 5px; }
+.tstat-dot { width: 8px; height: 8px; border-radius: 50%; }
+.tstat-num { font-weight: 500; }
+.topbar-right { display: flex; gap: 12px; align-items: center; white-space: nowrap; }
+.topbar-right .user { font-size: 11px; color: var(--muted); background: var(--surface2); padding: 4px 10px; border-radius: 20px; }
+.topbar-right a { font-size: 11px; color: var(--accent); text-decoration: none; }
+.topbar-right a:hover { text-decoration: underline; }
+
+/* ── Layout ── */
+.layout { flex: 1; display: flex; overflow: hidden; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 280px; min-width: 280px; max-width: 280px;
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+}
+.sidebar-head { padding: 10px 12px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+.search-wrap { position: relative; }
+.search-wrap input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border-light);
+  color: var(--text); font-family: var(--mono); font-size: 12px;
+  padding: 7px 10px 7px 30px; border-radius: 6px; outline: none;
+}
+.search-wrap input:focus { border-color: var(--accent); }
+.search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--muted2); font-size: 13px; }
+.filter-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.fbtn {
+  font-family: var(--mono); font-size: 10px; padding: 3px 9px;
+  border-radius: 20px; border: 1px solid var(--border-light);
+  cursor: pointer; background: transparent; color: var(--muted); transition: all 0.12s; white-space: nowrap;
+}
+.fbtn:hover { border-color: var(--accent); color: var(--accent); }
+.fbtn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.fbtn.fs { background: var(--shortlist-bg); border-color: var(--shortlist); color: var(--shortlist); }
+.fbtn.fm { background: var(--maybe-bg); border-color: var(--maybe); color: var(--maybe); }
+.fbtn.fr { background: var(--reject-bg); border-color: var(--reject); color: var(--reject); }
+.role-filter { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.clist { flex: 1; overflow-y: auto; }
+.clist::-webkit-scrollbar { width: 4px; }
+.clist::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+
+.c-item {
+  padding: 9px 12px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.1s; position: relative;
+}
+.c-item:hover { background: var(--surface2); }
+.c-item.active { background: var(--surface2); border-left: 2px solid var(--accent); }
+.c-item.active { padding-left: 10px; }
+.c-name { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.c-meta { font-size: 10px; color: var(--muted); margin-top: 2px; display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+.c-college { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status-pip {
+  flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--border-light);
+}
+.pip-shortlist { background: var(--shortlist); }
+.pip-maybe { background: var(--maybe); }
+.pip-reject { background: var(--reject); }
+.pip-unreviewed { background: var(--muted2); }
+.reviewer-dots { display: flex; gap: 3px; align-items: center; }
+.rdot { width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 600; }
+
+.sidebar-footer { padding: 8px 12px; border-top: 1px solid var(--border); font-size: 10px; color: var(--muted); }
+
+/* ── Detail Panel ── */
+.detail {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+.detail-head {
+  flex-shrink: 0; padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.dh-left { flex: 1; min-width: 0; }
+.dh-name { font-family: var(--serif); font-size: 22px; line-height: 1.2; }
+.dh-sub { font-size: 11px; color: var(--muted); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
+.dh-sub span { display: flex; align-items: center; gap: 4px; }
+.dh-right { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.rbtn {
+  font-family: var(--mono); font-size: 11px; padding: 6px 14px;
+  border-radius: 6px; border: 1px solid var(--border-light);
+  cursor: pointer; background: transparent; color: var(--muted); transition: all 0.12s;
+}
+.rbtn:hover { border-color: var(--border-light); }
+.rbtn.active-s { background: var(--shortlist-bg); border-color: var(--shortlist); color: var(--shortlist); }
+.rbtn.active-m { background: var(--maybe-bg); border-color: var(--maybe); color: var(--maybe); }
+.rbtn.active-r { background: var(--reject-bg); border-color: var(--reject); color: var(--reject); }
+
+.reviewer-status { display: flex; gap: 6px; margin-top: 6px; align-items: center; flex-wrap: wrap; }
+.rev-badge {
+  font-size: 10px; padding: 2px 8px; border-radius: 20px; display: flex; align-items: center; gap: 4px;
+  border: 1px solid var(--border-light); color: var(--muted);
+}
+.rev-badge.rs { background: var(--shortlist-bg); border-color: var(--shortlist); color: var(--shortlist); }
+.rev-badge.rm { background: var(--maybe-bg); border-color: var(--maybe); color: var(--maybe); }
+.rev-badge.rr { background: var(--reject-bg); border-color: var(--reject); color: var(--reject); }
+
+.detail-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.detail-body::-webkit-scrollbar { width: 4px; }
+.detail-body::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+
+.sec { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+.sec-label { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+.sec-text { font-size: 12px; color: var(--text); line-height: 1.7; white-space: pre-wrap; }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag {
+  font-size: 10px; padding: 2px 9px; border-radius: 20px;
+  background: var(--surface2); border: 1px solid var(--border-light); color: var(--muted);
+}
+.links-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.lchip {
+  font-size: 11px; padding: 5px 12px; border-radius: 6px;
+  border: 1px solid var(--border-light); color: var(--accent);
+  text-decoration: none; display: flex; align-items: center; gap: 5px;
+  background: transparent; cursor: pointer; transition: background 0.12s;
+}
+.lchip:hover { background: var(--accent-dim); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.note-area {
+  width: 100%; background: var(--bg); border: 1px solid var(--border-light);
+  color: var(--text); font-family: var(--mono); font-size: 12px;
+  padding: 10px 12px; border-radius: 6px; resize: vertical; min-height: 70px; outline: none; line-height: 1.6;
+}
+.note-area:focus { border-color: var(--accent); }
+.note-save { font-family: var(--mono); font-size: 11px; padding: 5px 14px; border-radius: 5px; border: 1px solid var(--border-light); background: transparent; color: var(--accent); cursor: pointer; margin-top: 6px; }
+.note-save:hover { background: var(--accent-dim); }
+.ai-box { background: var(--surface2); border: 1px solid var(--border-light); border-radius: 8px; padding: 14px 16px; }
+.ai-label { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; justify-content: space-between; }
+.ai-text { font-size: 12px; color: var(--text); line-height: 1.75; }
+.ai-loading { color: var(--muted); font-style: italic; font-size: 12px; }
+.ai-trigger { font-family: var(--mono); font-size: 11px; padding: 5px 14px; border-radius: 5px; border: 1px solid var(--border-light); background: transparent; color: var(--muted); cursor: pointer; margin-top: 8px; transition: all 0.12s; }
+.ai-trigger:hover { border-color: var(--accent); color: var(--accent); }
+.empty-state { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; }
+
+/* ── Conflict modal ── */
+.overlay {
+  display: none; position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.7); align-items: center; justify-content: center;
+}
+.overlay.show { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border-light);
+  border-radius: 12px; padding: 28px 32px; max-width: 420px; width: 90%;
+  box-shadow: 0 0 40px rgba(0,0,0,0.5);
+}
+.modal h3 { font-family: var(--serif); font-size: 20px; margin-bottom: 10px; }
+.modal p { font-size: 12px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
+.modal p strong { color: var(--text); }
+.modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+.mbtn { font-family: var(--mono); font-size: 12px; padding: 8px 18px; border-radius: 6px; border: 1px solid var(--border-light); cursor: pointer; background: transparent; color: var(--muted); transition: all 0.12s; }
+.mbtn.confirm { background: var(--reject-bg); border-color: var(--reject); color: var(--reject); }
+.mbtn.confirm:hover { background: var(--reject); color: #fff; }
+.mbtn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 20px; right: 20px; z-index: 200;
+  background: var(--surface); border: 1px solid var(--border-light);
+  padding: 10px 18px; border-radius: 8px; font-size: 12px;
+  transform: translateY(60px); opacity: 0; transition: all 0.25s; pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.ok { border-color: var(--shortlist); color: var(--shortlist); }
+.toast.err { border-color: var(--reject); color: var(--reject); }
+
+@media (max-width: 700px) {
+  .sidebar { width: 220px; min-width: 0; }
+  .two-col { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="logo">Candidate<span>Desk</span></div>
+  <div class="topbar-stats">
+    <div class="tstat"><div class="tstat-dot" style="background:var(--shortlist)"></div><span class="tstat-num" id="ts-s">–</span><span style="color:var(--muted)">shortlist</span></div>
+    <div class="tstat"><div class="tstat-dot" style="background:var(--maybe)"></div><span class="tstat-num" id="ts-m">–</span><span style="color:var(--muted)">maybe</span></div>
+    <div class="tstat"><div class="tstat-dot" style="background:var(--reject)"></div><span class="tstat-num" id="ts-r">–</span><span style="color:var(--muted)">reject</span></div>
+    <div class="tstat"><div class="tstat-dot" style="background:var(--muted2)"></div><span class="tstat-num" id="ts-u">–</span><span style="color:var(--muted)">unreviewed</span></div>
+  </div>
+  <div class="topbar-right">
+    <span class="user">👤 {{ username }}</span>
+    <a href="{{ url_for('upload') }}">+ Import CSV</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+</div>
+
+<!-- Layout -->
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-head">
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="search" placeholder="Search name, college, stack…" oninput="filterList()">
+      </div>
+      <div class="filter-row">
+        <button class="fbtn active" data-filter="all" onclick="setFilter('all',this)">All</button>
+        <button class="fbtn" data-filter="unreviewed" onclick="setFilter('unreviewed',this)">Unreviewed</button>
+        <button class="fbtn fs" data-filter="shortlist" onclick="setFilter('shortlist',this)">Shortlist</button>
+        <button class="fbtn fm" data-filter="maybe" onclick="setFilter('maybe',this)">Maybe</button>
+        <button class="fbtn fr" data-filter="reject" onclick="setFilter('reject',this)">Reject</button>
+      </div>
+      <div class="role-filter" id="role-filter">
+        <button class="fbtn active" data-role="all" onclick="setRole('all',this)">All roles</button>
+        {% for role in roles %}
+        <button class="fbtn" data-role="{{ role }}" onclick="setRole('{{ role }}',this)" style="font-size:9px">{{ role[:22] }}{% if role|length > 22 %}…{% endif %}</button>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="clist" id="clist"></div>
+    <div class="sidebar-footer" id="sb-footer">{{ candidates|length }} candidates total</div>
+  </div>
+
+  <!-- Detail -->
+  <div class="detail" id="detail-panel">
+    <div class="empty-state" id="empty-state">← Select a candidate to begin reviewing</div>
+  </div>
+</div>
+
+<!-- Conflict modal -->
+<div class="overlay" id="conflict-overlay">
+  <div class="modal">
+    <h3>⚠ Review conflict</h3>
+    <p id="conflict-msg">Another reviewer recently made a decision on this candidate.</p>
+    <div class="modal-btns">
+      <button class="mbtn" onclick="closeConflict()">Cancel</button>
+      <button class="mbtn confirm" onclick="forceReview()" id="force-btn">Override anyway</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const CANDIDATES = {{ candidates | tojson }};
+const USERNAME   = {{ username | tojson }};
+const ALL_USERS  = {{ all_users | tojson }};
+
+/* ── State ── */
+let reviews = {};      // key → { reviews:{user→{status,ts,at}}, note }
+let activeKey = null;
+let currentFilter = 'all';
+let currentRole   = 'all';
+let pendingAction = null;  // for conflict resolution
+
+/* ── User colour map ── */
+const USER_COLORS = ['#4f8ef7','#1D9E75','#d97706','#a855f7','#ec4899'];
+const userColor = u => USER_COLORS[ALL_USERS.indexOf(u) % USER_COLORS.length];
+
+/* ── Status helpers ── */
+function dominantStatus(revObj) {
+  if (!revObj || !Object.keys(revObj).length) return 'unreviewed';
+  const votes = Object.values(revObj).map(r => r.status).filter(s => s !== 'unreviewed');
+  if (!votes.length) return 'unreviewed';
+  return votes.reduce((a,b) => votes.filter(v=>v===a).length >= votes.filter(v=>v===b).length ? a : b);
+}
+function myStatus(key) {
+  return (reviews[key]?.reviews?.[USERNAME]?.status) || 'unreviewed';
+}
+function pipClass(key) {
+  const s = dominantStatus(reviews[key]?.reviews);
+  return 'pip-' + s;
+}
+
+/* ── Filter / render list ── */
+function getFiltered() {
+  const q = document.getElementById('search').value.toLowerCase();
+  return CANDIDATES.filter(c => {
+    const dom = dominantStatus(reviews[c.key]?.reviews);
+    const matchFilter = currentFilter === 'all' || dom === currentFilter;
+    const matchRole   = currentRole   === 'all' || c.role === currentRole;
+    const matchSearch = !q ||
+      c.name.toLowerCase().includes(q) ||
+      c.college.toLowerCase().includes(q) ||
+      c.description.toLowerCase().includes(q) ||
+      c.tech_stack.toLowerCase().includes(q);
+    return matchFilter && matchRole && matchSearch;
+  });
+}
+
+function renderList() {
+  const filtered = getFiltered();
+  const el = document.getElementById('clist');
+  el.innerHTML = filtered.map(c => {
+    const revObj = reviews[c.key]?.reviews || {};
+    const dots = Object.entries(revObj).map(([u, r]) => {
+      const color = userColor(u);
+      const initials = u.substring(0,1).toUpperCase();
+      const statusSym = r.status === 'shortlist' ? '✓' : r.status === 'maybe' ? '?' : r.status === 'reject' ? '✗' : '·';
+      return `<div class="rdot" style="background:${color}22;color:${color};border:1px solid ${color}66" title="${u}: ${r.status}">${statusSym}</div>`;
+    }).join('');
+    return `<div class="c-item ${c.key === activeKey ? 'active' : ''}" data-key="${c.key}" onclick="selectCandidate('${c.key}')">
+      <div class="c-name">${c.name}</div>
+      <div class="c-meta">
+        <span class="c-college">${c.college}</span>
+        <div style="display:flex;align-items:center;gap:4px">
+          <div class="reviewer-dots">${dots}</div>
+          <div class="status-pip ${pipClass(c.key)}"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('') || '<div style="padding:20px 12px;color:var(--muted);font-size:11px">No candidates match</div>';
+  document.getElementById('sb-footer').textContent = `${filtered.length} of ${CANDIDATES.length} shown`;
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.fbtn[data-filter]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterList();
+}
+function setRole(r, btn) {
+  currentRole = r;
+  document.querySelectorAll('.fbtn[data-role]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterList();
+}
+function filterList() { renderList(); }
+
+/* ── Select candidate ── */
+function selectCandidate(key) {
+  activeKey = key;
+  renderList();
+  renderDetail(key);
+}
+
+function getCandidateByKey(key) {
+  return CANDIDATES.find(c => c.key === key);
+}
+
+function renderDetail(key) {
+  const c = getCandidateByKey(key);
+  if (!c) return;
+  const revData = reviews[key] || { reviews: {}, note: '' };
+  const revObj  = revData.reviews;
+  const note    = revData.note || '';
+  const aiReview = c.ai_review || '';
+  const myS     = myStatus(key);
+
+  /* tech tags */
+  const tags = c.tech_stack.split(/[,\n]/)
+    .map(t => t.trim()).filter(t => t.length > 1 && t.length < 35).slice(0, 16)
+    .map(t => `<span class="tag">${t}</span>`).join('');
+
+  /* links */
+  const links = [];
+  if (c.deployment && c.deployment.length > 4 && !c.deployment.includes('localhost') && c.deployment !== 'NA' && c.deployment !== 'N/A')
+    links.push(`<a class="lchip" href="${c.deployment.startsWith('http') ? c.deployment : 'https://' + c.deployment}" target="_blank">↗ Live Demo</a>`);
+  if (c.screenshots && c.screenshots.length > 4 && c.screenshots !== 'not')
+    links.push(`<a class="lchip" href="${c.screenshots}" target="_blank">📸 Screenshots</a>`);
+  if (c.github && c.github.length > 4)
+    links.push(`<a class="lchip" href="${c.github}" target="_blank">⌥ GitHub</a>`);
+  if (c.demo_video && c.demo_video.length > 4)
+    links.push(`<a class="lchip" href="${c.demo_video}" target="_blank">▶ Demo Video</a>`);
+
+  /* reviewer badges */
+  const badges = ALL_USERS.map(u => {
+    const r = revObj[u];
+    if (!r) return `<span class="rev-badge">${u}: –</span>`;
+    const cls = r.status === 'shortlist' ? 'rs' : r.status === 'maybe' ? 'rm' : r.status === 'reject' ? 'rr' : '';
+    const sym = r.status === 'shortlist' ? '✓' : r.status === 'maybe' ? '?' : r.status === 'reject' ? '✗' : '·';
+    return `<span class="rev-badge ${cls}">${sym} ${u} · ${r.status}${r.at ? ' · ' + r.at : ''}</span>`;
+  }).join('');
+
+  /* ai section */
+  const aiSection = aiReview
+    ? `<div class="ai-label"><span>✦ AI Assessment</span><button class="ai-trigger" onclick="runAI('${key}')">Refresh</button></div><div class="ai-text" id="ai-text-${key}">${aiReview}</div>`
+    : `<div class="ai-label"><span>✦ AI Assessment</span></div><div class="ai-text ai-loading" id="ai-text-${key}">Not yet generated.</div>
+       <button class="ai-trigger" onclick="runAI('${key}')">✦ Generate AI Review</button>`;
+
+  document.getElementById('detail-panel').innerHTML = `
+  <div class="detail-head">
+    <div class="dh-left">
+      <div class="dh-name">${c.name}</div>
+      <div class="dh-sub">
+        <span>🎓 ${c.college}</span>
+        <span>📞 ${c.phone}</span>
+        <span>🕐 ${c.timestamp}</span>
+      </div>
+      <div class="reviewer-status" style="margin-top:8px">${badges}</div>
+    </div>
+    <div class="dh-right">
+      <button class="rbtn ${myS==='shortlist'?'active-s':''}" id="btn-shortlist" onclick="doReview('${key}','shortlist')">✓ Shortlist</button>
+      <button class="rbtn ${myS==='maybe'?'active-m':''}"    id="btn-maybe"     onclick="doReview('${key}','maybe')">? Maybe</button>
+      <button class="rbtn ${myS==='reject'?'active-r':''}"   id="btn-reject"    onclick="doReview('${key}','reject')">✗ Reject</button>
+    </div>
+  </div>
+  <div class="detail-body">
+    <div class="sec">
+      <div class="sec-label">Project Description</div>
+      <div class="sec-text">${c.description || '—'}</div>
+    </div>
+    <div class="two-col">
+      <div class="sec">
+        <div class="sec-label">Tech Stack</div>
+        <div class="tags">${tags || '<span style="color:var(--muted)">—</span>'}</div>
+      </div>
+      <div class="sec">
+        <div class="sec-label">Links</div>
+        ${links.length ? `<div class="links-row">${links.join('')}</div>` : '<span style="color:var(--muted)">None provided</span>'}
+      </div>
+    </div>
+    ${c.features ? `<div class="sec"><div class="sec-label">Key Features</div><div class="sec-text">${c.features}</div></div>` : ''}
+    <div class="two-col">
+      ${c.learning ? `<div class="sec"><div class="sec-label">What they learned</div><div class="sec-text">${c.learning.substring(0,400)}${c.learning.length>400?'…':''}</div></div>` : ''}
+      ${c.ai_usage ? `<div class="sec"><div class="sec-label">AI tool usage</div><div class="sec-text">${c.ai_usage.substring(0,400)}${c.ai_usage.length>400?'…':''}</div></div>` : ''}
+    </div>
+    <div class="sec">
+      <div class="sec-label">Shared Notes</div>
+      <textarea class="note-area" id="note-${key}" placeholder="Add shared notes visible to all reviewers…">${note}</textarea>
+      <button class="note-save" onclick="saveNote('${key}')">Save note</button>
+    </div>
+    <div class="ai-box">${aiSection}</div>
+  </div>`;
+}
+
+/* ── Review ── */
+async function doReview(key, status, force=false) {
+  /* Toggle: clicking active status clears it */
+  if (!force && myStatus(key) === status) status = 'unreviewed';
+
+  const res = await fetch(`/review/${key}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({status, force})
+  });
+  const data = await res.json();
+
+  if (data.conflict) {
+    showConflict(data, key, status);
+    return;
+  }
+  if (data.ok) {
+    reviews[key] = reviews[key] || {reviews:{}, note:''};
+    reviews[key].reviews = data.reviews;
+    renderList();
+    renderDetail(key);
+    showToast('Decision saved', 'ok');
+    refreshStats();
+  } else {
+    showToast('Error: ' + (data.error||'unknown'), 'err');
+  }
+}
+
+/* ── Conflict ── */
+function showConflict(data, key, status) {
+  pendingAction = { key, status };
+  document.getElementById('conflict-msg').innerHTML =
+    `<strong>${data.conflict_by}</strong> just marked this candidate as <strong>${data.their_status}</strong> at ${data.conflict_at}.<br><br>
+    Do you want to override their decision with <strong>"${status}"</strong>? They will see your override.`;
+  document.getElementById('conflict-overlay').classList.add('show');
+}
+function closeConflict() {
+  document.getElementById('conflict-overlay').classList.remove('show');
+  pendingAction = null;
+}
+function forceReview() {
+  if (!pendingAction) return;
+  closeConflict();
+  doReview(pendingAction.key, pendingAction.status, true);
+}
+
+/* ── Note ── */
+async function saveNote(key) {
+  const note = document.getElementById('note-' + key)?.value || '';
+  const res = await fetch(`/note/${key}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({note})
+  });
+  if ((await res.json()).ok) showToast('Note saved', 'ok');
+}
+
+/* ── AI Review ── */
+async function runAI(key) {
+  const c = getCandidateByKey(key);
+  if (!c) return;
+  const el = document.getElementById('ai-text-' + key);
+  if (el) el.textContent = 'Analyzing…';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+        system: 'You are a technical recruiter reviewing fullstack/AI developer submissions for a startup. Be direct and sharp. Give a 3-4 sentence assessment covering: (1) technical depth and stack sophistication, (2) what genuinely stands out, (3) any gaps or red flags, (4) a clear recommendation: Strong Shortlist / Shortlist / Maybe / Pass. Plain text only, no markdown.',
+        messages: [{role:'user', content:`Candidate: ${c.name} (${c.college})\nProject: ${c.description}\nStack: ${c.tech_stack}\nFeatures: ${c.features}\nLearning: ${c.learning}\nAI usage: ${c.ai_usage}`}]
+      })
+    });
+    const d = await res.json();
+    const text = d.content?.[0]?.text || 'Could not generate.';
+    if (el) el.textContent = text;
+    /* Persist to server */
+    await fetch(`/ai_review/${key}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text})
+    });
+    c.ai_review = text;
+    showToast('AI review saved', 'ok');
+  } catch(e) {
+    if (el) el.textContent = 'Error generating review.';
+    showToast('AI call failed', 'err');
+  }
+}
+
+/* ── Stats ── */
+async function refreshStats() {
+  const res = await fetch('/api/stats');
+  const d = await res.json();
+  document.getElementById('ts-s').textContent = d.shortlist  || 0;
+  document.getElementById('ts-m').textContent = d.maybe      || 0;
+  document.getElementById('ts-r').textContent = d.reject     || 0;
+  document.getElementById('ts-u').textContent = d.unreviewed || 0;
+}
+
+/* ── Polling for concurrent updates ── */
+async function pollReviews() {
+  try {
+    const res = await fetch('/api/reviews');
+    const data = await res.json();
+    let changed = false;
+    for (const [key, rd] of Object.entries(data)) {
+      const prev = JSON.stringify(reviews[key]);
+      reviews[key] = rd;
+      if (JSON.stringify(rd) !== prev) changed = true;
+    }
+    if (changed) {
+      renderList();
+      if (activeKey) renderDetail(activeKey);
+      refreshStats();
+    }
+  } catch(e) {}
+}
+
+/* ── Toast ── */
+let toastTimer;
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast', 2500);
+}
+
+/* ── Keyboard ── */
+document.addEventListener('keydown', e => {
+  const filtered = getFiltered();
+  if (!filtered.length) return;
+  const idx = filtered.findIndex(c => c.key === activeKey);
+  if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault(); selectCandidate(filtered[Math.min(idx+1,filtered.length-1)].key); }
+  if (e.key === 'ArrowUp'   || e.key === 'k') { e.preventDefault(); selectCandidate(filtered[Math.max(idx-1,0)].key); }
+  if (e.key === '1' && activeKey) doReview(activeKey,'shortlist');
+  if (e.key === '2' && activeKey) doReview(activeKey,'maybe');
+  if (e.key === '3' && activeKey) doReview(activeKey,'reject');
+});
+
+/* ── Init ── */
+(async () => {
+  /* Load all reviews first */
+  try {
+    const res = await fetch('/api/reviews');
+    reviews = await res.json();
+  } catch(e) {}
+  /* Pre-populate ai_review from CANDIDATES array */
+  CANDIDATES.forEach(c => { if (!reviews[c.key]) reviews[c.key] = {reviews:{}, note:''}; });
+  renderList();
+  refreshStats();
+  /* Auto-select first */
+  const first = getFiltered()[0];
+  if (first) selectCandidate(first.key);
+  /* Poll every 5s for concurrent updates */
+  setInterval(pollReviews, 5000);
+})();
+</script>
+</body>
+</html>

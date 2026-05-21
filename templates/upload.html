@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upload CSV — CandidateDesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0f12; --surface: #13161b; --border: #1f2430; --border-light: #2a3040;
+  --text: #e8eaf0; --muted: #6b7280; --accent: #4f8ef7; --success: #1D9E75;
+  --serif: 'DM Serif Display', Georgia, serif;
+  --mono: 'DM Mono', 'Courier New', monospace;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--mono); min-height: 100vh; }
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.logo { font-family: var(--serif); font-size: 20px; }
+.logo span { color: var(--accent); font-style: italic; }
+.topbar-right { display: flex; gap: 16px; align-items: center; font-size: 12px; color: var(--muted); }
+.topbar-right a { color: var(--accent); text-decoration: none; }
+.content { max-width: 600px; margin: 60px auto; padding: 0 24px; }
+h1 { font-family: var(--serif); font-size: 28px; margin-bottom: 8px; }
+.desc { font-size: 12px; color: var(--muted); margin-bottom: 36px; line-height: 1.7; }
+.upload-zone {
+  border: 2px dashed var(--border-light);
+  border-radius: 12px;
+  padding: 48px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(79,142,247,0.04); }
+.upload-icon { font-size: 36px; margin-bottom: 12px; }
+.upload-zone p { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+.upload-zone input[type=file] { display: none; }
+.btn {
+  background: var(--accent); color: #fff; border: none;
+  font-family: var(--mono); font-size: 13px; padding: 10px 24px;
+  border-radius: 6px; cursor: pointer; transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-ghost {
+  background: transparent; color: var(--accent); border: 1px solid var(--border-light);
+}
+.result {
+  margin-top: 32px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 24px;
+}
+.result h2 { font-family: var(--serif); font-size: 20px; margin-bottom: 16px; color: #6ee7b7; }
+.stat { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.stat:last-child { border: none; }
+.stat .val { color: var(--accent); font-weight: 500; }
+.role-tag {
+  display: inline-block; font-size: 11px; padding: 2px 10px; border-radius: 20px;
+  background: rgba(79,142,247,0.12); color: var(--accent); margin: 4px 4px 0 0;
+}
+.back-link { display: inline-block; margin-top: 24px; color: var(--accent); font-size: 12px; text-decoration: none; }
+.flash { background: rgba(226,75,74,0.12); border: 1px solid rgba(226,75,74,0.3); color: #f08080; font-size: 12px; padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; }
+.rules { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 28px; }
+.rules li { font-size: 12px; color: var(--muted); line-height: 1.9; list-style: none; padding-left: 14px; position: relative; }
+.rules li::before { content: '→'; position: absolute; left: 0; color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">Candidate<span>Desk</span></div>
+  <div class="topbar-right">
+    <span>{{ username }}</span>
+    <a href="{{ url_for('index') }}">← Back to dashboard</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+</div>
+<div class="content">
+  <h1>Import Candidates</h1>
+  <p class="desc">Upload a Google Forms CSV export. You can re-upload the same file as new responses come in — existing reviews and notes are always preserved.</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="flash">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <ul class="rules">
+    <li>New rows are added automatically</li>
+    <li>Existing candidates are updated (contact info, description, etc.) — reviews kept</li>
+    <li>Duplicate candidates (same name + phone) are merged, not duplicated</li>
+    <li>All roles in the CSV are imported; filter by role on the dashboard</li>
+  </ul>
+
+  {% if result %}
+  <div class="result">
+    <h2>✓ Import complete</h2>
+    <div class="stat"><span>New candidates added</span><span class="val">{{ result.new }}</span></div>
+    <div class="stat"><span>Existing candidates updated</span><span class="val">{{ result.updated }}</span></div>
+    <div class="stat"><span>Roles found</span><span>
+      {% for role, cnt in result.roles.items() %}
+        <span class="role-tag">{{ role }} ({{ cnt }})</span>
+      {% endfor %}
+    </span></div>
+  </div>
+  <a href="{{ url_for('index') }}" class="back-link">← Go to dashboard</a>
+  {% else %}
+  <form method="POST" enctype="multipart/form-data" id="upform">
+    <div class="upload-zone" id="zone" onclick="document.getElementById('ffile').click()">
+      <div class="upload-icon">📊</div>
+      <p id="zone-label">Drag & drop your CSV here, or click to browse</p>
+      <input type="file" name="csv_file" id="ffile" accept=".csv" onchange="handleFile(this)">
+    </div>
+    <div style="margin-top:20px; display:flex; gap:12px;">
+      <button type="submit" class="btn" id="submit-btn" disabled>Upload & Import</button>
+      <a href="{{ url_for('index') }}" class="btn btn-ghost">Cancel</a>
+    </div>
+  </form>
+  {% endif %}
+</div>
+<script>
+const zone = document.getElementById('zone');
+const btn  = document.getElementById('submit-btn');
+const lbl  = document.getElementById('zone-label');
+
+function handleFile(inp) {
+  if (inp.files.length) {
+    lbl.textContent = '✓ ' + inp.files[0].name;
+    btn.disabled = false;
+    zone.style.borderColor = '#4f8ef7';
+  }
+}
+
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('drag');
+  const dt = new DataTransfer();
+  dt.items.add(e.dataTransfer.files[0]);
+  const inp = document.getElementById('ffile');
+  inp.files = dt.files;
+  handleFile(inp);
+});
+</script>
+</body>
+</html>
