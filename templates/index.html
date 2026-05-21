@@ -683,8 +683,8 @@ document.addEventListener('keydown', e => {
   const filtered = getFiltered();
   if (!filtered.length) return;
   const idx = filtered.findIndex(c => c.key === activeKey);
-  if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault(); selectCandidate(filtered[Math.min(idx+1,filtered.length-1)].key); }
-  if (e.key === 'ArrowUp'   || e.key === 'k') { e.preventDefault(); selectCandidate(filtered[Math.max(idx-1,0)].key); }
+  if (e.key === 'ArrowDown') { e.preventDefault(); selectCandidate(filtered[Math.min(idx+1,filtered.length-1)].key); }
+  if (e.key === 'ArrowUp')   { e.preventDefault(); selectCandidate(filtered[Math.max(idx-1,0)].key); }
   if (e.key === '1' && activeKey) doReview(activeKey,'shortlist');
   if (e.key === '2' && activeKey) doReview(activeKey,'maybe');
   if (e.key === '3' && activeKey) doReview(activeKey,'reject');
