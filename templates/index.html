@@ -320,11 +320,10 @@ function getFiltered() {
     const dom = dominantStatus(reviews[c.key]?.reviews);
     const matchFilter = currentFilter === 'all' || dom === currentFilter;
     const matchRole   = currentRole   === 'all' || c.role === currentRole;
-    const matchSearch = !q ||
-      c.name.toLowerCase().includes(q) ||
-      c.college.toLowerCase().includes(q) ||
-      c.description.toLowerCase().includes(q) ||
-      c.tech_stack.toLowerCase().includes(q);
+    const searchText = [c.name, c.college, c.description, c.tech_stack,
+      c.vr_description, c.vr_tools, c.iot_description, c.iot_tech,
+      c.design_description, c.design_tools].join(' ').toLowerCase();
+    const matchSearch = !q || searchText.includes(q);
     return matchFilter && matchRole && matchSearch;
   });
 }
@@ -388,21 +387,32 @@ function renderDetail(key) {
   const aiReview = c.ai_review || '';
   const myS     = myStatus(key);
 
-  /* tech tags */
-  const tags = c.tech_stack.split(/[,\n]/)
+  /* tech tags — use role-specific field if generic is empty */
+  const techStr = c.tech_stack || c.vr_tools || c.iot_tech || c.design_tools || '';
+  const tags = techStr.split(/[,\n]/)
     .map(t => t.trim()).filter(t => t.length > 1 && t.length < 35).slice(0, 16)
     .map(t => `<span class="tag">${t}</span>`).join('');
 
-  /* links */
+  /* links — collect all non-empty link fields across roles */
   const links = [];
-  if (c.deployment && c.deployment.length > 4 && !c.deployment.includes('localhost') && c.deployment !== 'NA' && c.deployment !== 'N/A')
-    links.push(`<a class="lchip" href="${c.deployment.startsWith('http') ? c.deployment : 'https://' + c.deployment}" target="_blank">↗ Live Demo</a>`);
-  if (c.screenshots && c.screenshots.length > 4 && c.screenshots !== 'not')
-    links.push(`<a class="lchip" href="${c.screenshots}" target="_blank">📸 Screenshots</a>`);
-  if (c.github && c.github.length > 4)
-    links.push(`<a class="lchip" href="${c.github}" target="_blank">⌥ GitHub</a>`);
-  if (c.demo_video && c.demo_video.length > 4)
-    links.push(`<a class="lchip" href="${c.demo_video}" target="_blank">▶ Demo Video</a>`);
+  const lnk = (url, label) => {
+    if (!url || url.length < 5 || url === 'NA' || url === 'N/A' || url === 'not') return;
+    const href = url.startsWith('http') ? url : 'https://' + url;
+    links.push(`<a class="lchip" href="${href}" target="_blank">${label}</a>`);
+  };
+  lnk(c.deployment,    '↗ Live Demo');
+  lnk(c.iot_build,     '↗ Simulator Demo');
+  lnk(c.screenshots,   '📸 Screenshots');
+  lnk(c.github,        '⌥ GitHub');
+  lnk(c.iot_github,    '⌥ GitHub');
+  lnk(c.demo_video,    '▶ Demo Video');
+  lnk(c.iot_demo,      '▶ Demo / Screenshots');
+  lnk(c.design_cad_files,  '📁 CAD Files');
+  lnk(c.design_renders,    '🖼 Renders');
+  lnk(c.design_video,      '▶ Design Video');
+  lnk(c.design_simulation, '📊 Simulation Report');
+  lnk(c.design_prototype,  '📷 Prototype Photos');
+  lnk(c.vr_apk,            '📦 APK Download');
 
   /* reviewer badges */
   const badges = ALL_USERS.map(u => {
@@ -419,6 +429,74 @@ function renderDetail(key) {
     : `<div class="ai-label"><span>✦ AI Assessment</span></div><div class="ai-text ai-loading" id="ai-text-${key}">Not yet generated.</div>
        <button class="ai-trigger" onclick="runAI('${key}')">✦ Generate AI Review</button>`;
 
+  /* ── role-specific body sections ── */
+  const role = c.role || '';
+  let roleBody = '';
+
+  const sec = (label, text, trunc=0) => {
+    if (!text) return '';
+    const t = trunc && text.length > trunc ? text.substring(0, trunc) + '…' : text;
+    return `<div class="sec"><div class="sec-label">${label}</div><div class="sec-text">${t}</div></div>`;
+  };
+
+  if (role.includes('Full Stack') || role.includes('AI Developer')) {
+    roleBody = `
+      ${sec('Project Description', c.description)}
+      <div class="two-col">
+        <div class="sec"><div class="sec-label">Tech Stack</div><div class="tags">${tags || '<span style="color:var(--muted)">—</span>'}</div></div>
+        <div class="sec"><div class="sec-label">Links</div>${links.length ? `<div class="links-row">${links.join('')}</div>` : '<span style="color:var(--muted)">None provided</span>'}</div>
+      </div>
+      ${sec('Key Features', c.features)}
+      ${sec('Challenges & Solutions', c.challenges)}`;
+
+  } else if (role.includes('VR') || role.includes('Clinical')) {
+    roleBody = `
+      ${sec('VR / App Description', c.vr_description || c.description)}
+      <div class="two-col">
+        <div class="sec"><div class="sec-label">Tools / Engines</div><div class="tags">${tags || '<span style="color:var(--muted)">—</span>'}</div></div>
+        <div class="sec"><div class="sec-label">Links</div>${links.length ? `<div class="links-row">${links.join('')}</div>` : '<span style="color:var(--muted)">None provided</span>'}</div>
+      </div>
+      ${sec('Features & Interactions', c.vr_features || c.features)}
+      ${sec('Architecture & Code Structure', c.vr_architecture)}
+      ${sec('Performance & Optimization', c.vr_performance)}
+      ${sec('Challenges & Solutions', c.challenges)}`;
+
+  } else if (role.includes('Mechanical') || role.includes('Industrial') || role.includes('Design')) {
+    roleBody = `
+      ${sec('Assignment', c.design_assignment || c.assignment)}
+      ${sec('Design Approach', c.design_description || c.description)}
+      <div class="two-col">
+        <div class="sec"><div class="sec-label">Software / Tools</div><div class="tags">${tags || '<span style="color:var(--muted)">—</span>'}</div></div>
+        <div class="sec"><div class="sec-label">Links</div>${links.length ? `<div class="links-row">${links.join('')}</div>` : '<span style="color:var(--muted)">None provided</span>'}</div>
+      </div>
+      ${sec('Key Design Decisions', c.design_decisions || c.features)}
+      ${sec('Manufacturing / Material Considerations', c.design_manufacturing)}
+      ${sec('Challenges & Solutions', c.design_challenges || c.challenges)}`;
+
+  } else if (role.includes('IoT') || role.includes('Glasses')) {
+    roleBody = `
+      ${sec('Submission Overview', c.iot_description || c.description)}
+      <div class="two-col">
+        <div class="sec"><div class="sec-label">Technologies</div><div class="tags">${tags || '<span style="color:var(--muted)">—</span>'}</div></div>
+        <div class="sec"><div class="sec-label">Links</div>${links.length ? `<div class="links-row">${links.join('')}</div>` : '<span style="color:var(--muted)">None provided</span>'}</div>
+      </div>
+      ${sec('Protocol Parser & BLE Approach', c.iot_protocol)}
+      ${sec('Simulator / Visualization Features', c.iot_simulator || c.features)}
+      ${sec('Testing & Validation', c.iot_testing)}
+      ${sec('Challenges & Solutions', c.iot_challenges || c.challenges)}`;
+
+  } else {
+    // fallback: show whatever is populated
+    roleBody = `
+      ${sec('Description', c.description)}
+      <div class="two-col">
+        <div class="sec"><div class="sec-label">Tech / Tools</div><div class="tags">${tags || '<span style="color:var(--muted)">—</span>'}</div></div>
+        <div class="sec"><div class="sec-label">Links</div>${links.length ? `<div class="links-row">${links.join('')}</div>` : '<span style="color:var(--muted)">None provided</span>'}</div>
+      </div>
+      ${sec('Features', c.features)}
+      ${sec('Challenges', c.challenges)}`;
+  }
+
   document.getElementById('detail-panel').innerHTML = `
   <div class="detail-head">
     <div class="dh-left">
@@ -427,6 +505,7 @@ function renderDetail(key) {
         <span>🎓 ${c.college}</span>
         <span>📞 ${c.phone}</span>
         <span>🕐 ${c.timestamp}</span>
+        <span style="color:var(--accent);font-size:10px">${role}</span>
       </div>
       <div class="reviewer-status" style="margin-top:8px">${badges}</div>
     </div>
@@ -437,21 +516,7 @@ function renderDetail(key) {
     </div>
   </div>
   <div class="detail-body">
-    <div class="sec">
-      <div class="sec-label">Project Description</div>
-      <div class="sec-text">${c.description || '—'}</div>
-    </div>
-    <div class="two-col">
-      <div class="sec">
-        <div class="sec-label">Tech Stack</div>
-        <div class="tags">${tags || '<span style="color:var(--muted)">—</span>'}</div>
-      </div>
-      <div class="sec">
-        <div class="sec-label">Links</div>
-        ${links.length ? `<div class="links-row">${links.join('')}</div>` : '<span style="color:var(--muted)">None provided</span>'}
-      </div>
-    </div>
-    ${c.features ? `<div class="sec"><div class="sec-label">Key Features</div><div class="sec-text">${c.features}</div></div>` : ''}
+    ${roleBody}
     <div class="two-col">
       ${c.learning ? `<div class="sec"><div class="sec-label">What they learned</div><div class="sec-text">${c.learning.substring(0,400)}${c.learning.length>400?'…':''}</div></div>` : ''}
       ${c.ai_usage ? `<div class="sec"><div class="sec-label">AI tool usage</div><div class="sec-text">${c.ai_usage.substring(0,400)}${c.ai_usage.length>400?'…':''}</div></div>` : ''}
@@ -528,14 +593,31 @@ async function runAI(key) {
   const el = document.getElementById('ai-text-' + key);
   if (el) el.textContent = 'Analyzing…';
 
+  /* Build role-specific AI prompt */
+  const role = c.role || '';
+  let aiSystem, aiContent;
+  if (role.includes('VR') || role.includes('Clinical')) {
+    aiSystem = 'You are a technical recruiter reviewing VR/clinical app developer submissions for a startup. Be direct and sharp. Assess: (1) depth of VR/3D/clinical implementation, (2) architecture quality and performance considerations, (3) what stands out or is missing, (4) recommendation: Strong Shortlist / Shortlist / Maybe / Pass. Plain text only, no markdown.';
+    aiContent = `Candidate: ${c.name} (${c.college})\nRole: ${role}\nDescription: ${c.vr_description || c.description}\nTools/Engines: ${c.vr_tools || c.tech_stack}\nFeatures: ${c.vr_features || c.features}\nArchitecture: ${c.vr_architecture}\nPerformance: ${c.vr_performance}\nLearning: ${c.learning}`;
+  } else if (role.includes('Mechanical') || role.includes('Industrial') || role.includes('Design')) {
+    aiSystem = 'You are a recruiter reviewing mechanical/industrial design submissions for a startup. Be direct. Assess: (1) quality and clarity of design approach, (2) engineering thinking and manufacturing awareness, (3) what stands out or is weak, (4) recommendation: Strong Shortlist / Shortlist / Maybe / Pass. Plain text only, no markdown.';
+    aiContent = `Candidate: ${c.name} (${c.college})\nRole: ${role}\nAssignment: ${c.design_assignment || c.assignment}\nDesign Approach: ${c.design_description || c.description}\nTools: ${c.design_tools || c.tech_stack}\nKey Decisions: ${c.design_decisions || c.features}\nManufacturing Considerations: ${c.design_manufacturing}\nChallenges: ${c.design_challenges || c.challenges}\nLearning: ${c.learning}`;
+  } else if (role.includes('IoT') || role.includes('Glasses')) {
+    aiSystem = 'You are a technical recruiter reviewing Smart Glasses / IoT developer submissions for a startup. Be direct and sharp. Assess: (1) depth of BLE/protocol implementation and simulator quality, (2) testing rigour and engineering thinking, (3) what genuinely stands out or is missing, (4) recommendation: Strong Shortlist / Shortlist / Maybe / Pass. Plain text only, no markdown.';
+    aiContent = `Candidate: ${c.name} (${c.college})\nRole: ${role}\nOverview: ${c.iot_description || c.description}\nTech: ${c.iot_tech || c.tech_stack}\nProtocol/BLE Approach: ${c.iot_protocol}\nSimulator Features: ${c.iot_simulator || c.features}\nTesting: ${c.iot_testing}\nChallenges: ${c.iot_challenges || c.challenges}\nLearning: ${c.learning}`;
+  } else {
+    aiSystem = 'You are a technical recruiter reviewing fullstack/AI developer submissions for a startup. Be direct and sharp. Give a 3-4 sentence assessment covering: (1) technical depth and stack sophistication, (2) what genuinely stands out, (3) any gaps or red flags, (4) a clear recommendation: Strong Shortlist / Shortlist / Maybe / Pass. Plain text only, no markdown.';
+    aiContent = `Candidate: ${c.name} (${c.college})\nProject: ${c.description}\nStack: ${c.tech_stack}\nFeatures: ${c.features}\nLearning: ${c.learning}\nAI usage: ${c.ai_usage}`;
+  }
+
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514', max_tokens: 1000,
-        system: 'You are a technical recruiter reviewing fullstack/AI developer submissions for a startup. Be direct and sharp. Give a 3-4 sentence assessment covering: (1) technical depth and stack sophistication, (2) what genuinely stands out, (3) any gaps or red flags, (4) a clear recommendation: Strong Shortlist / Shortlist / Maybe / Pass. Plain text only, no markdown.',
-        messages: [{role:'user', content:`Candidate: ${c.name} (${c.college})\nProject: ${c.description}\nStack: ${c.tech_stack}\nFeatures: ${c.features}\nLearning: ${c.learning}\nAI usage: ${c.ai_usage}`}]
+        system: aiSystem,
+        messages: [{role:'user', content: aiContent}]
       })
     });
     const d = await res.json();

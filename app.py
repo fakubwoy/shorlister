@@ -69,26 +69,137 @@ def _candidate_key(row):
 
 def _parse_row(row):
     role = row.get("Role Applying For (Required)", "").strip()
-    return {
+
+    # ── Common fields (all roles) ─────────────────────────────────────────────
+    parsed = {
         "key":        _candidate_key(row),
         "name":       row.get("Full Name", "").strip(),
         "college":    row.get("College / University Name", "").strip(),
         "phone":      row.get("Contact Number", "").strip(),
         "role":       role,
         "timestamp":  row.get("Timestamp", "").strip(),
-        "assignment": row.get("Assignment Submitted", "").strip(),
-        "description":row.get("Brief Description of Submission", "").strip(),
-        "tech_stack": row.get("Tech Stack Used", "").strip(),
-        "features":   row.get("Key Features Implemented", "").strip(),
-        "challenges": row.get("Challenges Faced & Solutions", "").strip(),
-        "github":     row.get("GitHub Repository URL", "").strip(),
-        "demo_video": row.get("Google Drive Link for Demo Video", "").strip(),
-        "screenshots":row.get("Google Drive Link for Screenshots / Assets", "").strip(),
-        "deployment": row.get("Deployment Link", "").strip(),
         "learning":   row.get("What did you learn from this assignment?", "").strip(),
+        "references": row.get("References / Tutorials / Tools Used", "").strip(),
         "ai_usage":   row.get("If AI tools were used, explain how (e.g., code generation, design inspiration, analysis).", "").strip(),
         "declaration":row.get("Declaration", "").strip(),
+        # role-specific fields default to empty
+        "assignment": "",
+        "description": "",
+        "tech_stack": "",
+        "features": "",
+        "challenges": "",
+        "github": "",
+        "demo_video": "",
+        "screenshots": "",
+        "deployment": "",
+        # VR / Clinical App Developer fields
+        "vr_description": "",
+        "vr_tools": "",
+        "vr_features": "",
+        "vr_architecture": "",
+        "vr_performance": "",
+        "vr_apk": "",
+        # Mechanical / Industrial Design fields
+        "design_assignment": "",
+        "design_description": "",
+        "design_tools": "",
+        "design_decisions": "",
+        "design_manufacturing": "",
+        "design_cad_files": "",
+        "design_renders": "",
+        "design_video": "",
+        "design_simulation": "",
+        "design_prototype": "",
+        # Smart Glasses / IoT fields
+        "iot_description": "",
+        "iot_tech": "",
+        "iot_protocol": "",
+        "iot_simulator": "",
+        "iot_testing": "",
+        "iot_challenges": "",
+        "iot_github": "",
+        "iot_demo": "",
+        "iot_build": "",
     }
+
+    # ── Full Stack / AI Developer ─────────────────────────────────────────────
+    if "Full Stack" in role or "AI Developer" in role:
+        parsed.update({
+            "assignment":  row.get("Assignment Submitted", "").strip(),
+            "description": row.get("Brief Description of Submission", "").strip(),
+            "tech_stack":  row.get("Tech Stack Used", "").strip(),
+            "features":    row.get("Key Features Implemented", "").strip(),
+            "challenges":  row.get("Challenges Faced & Solutions", "").strip(),
+            "github":      row.get("GitHub Repository URL", "").strip(),
+            "demo_video":  row.get("Google Drive Link for Demo Video", "").strip(),
+            "screenshots": row.get("Google Drive Link for Screenshots / Assets", "").strip(),
+            "deployment":  row.get("Deployment Link", "").strip(),
+        })
+
+    # ── VR & Clinical App Developer ───────────────────────────────────────────
+    elif "VR" in role or "Clinical" in role:
+        parsed.update({
+            "github":          row.get("GitHub Repository URL", "").strip(),
+            "demo_video":      row.get("Google Drive Link for Demo Video", "").strip(),
+            "screenshots":     row.get("Google Drive Link for Screenshots / Demo Media ", "").strip(),
+            "vr_description":  row.get("Brief Description of VR Experience", "").strip(),
+            "vr_tools":        row.get("Tools / Engines Used", "").strip(),
+            "vr_features":     row.get("Features / Interactions Implemented", "").strip(),
+            "vr_architecture": row.get("  Architecture & Code Structure  ", "").strip(),
+            "vr_performance":  row.get("  Performance & Optimization Considerations  ", "").strip(),
+            "vr_apk":          row.get("APK / Build Download Link (Optional)", "").strip(),
+            # map to generic fields so search and AI review work
+            "description":     row.get("Brief Description of VR Experience", "").strip(),
+            "tech_stack":      row.get("Tools / Engines Used", "").strip(),
+            "features":        row.get("Features / Interactions Implemented", "").strip(),
+            "challenges":      row.get("Challenges Faced & Solutions", "").strip(),
+        })
+
+    # ── Mechanical / Industrial Design ────────────────────────────────────────
+    elif "Mechanical" in role or "Industrial" in role or "Design" in role:
+        parsed.update({
+            "design_assignment":    row.get("Assignment Submitted", "").strip(),
+            "design_description":   row.get("Brief Description of Design Approach", "").strip(),
+            "design_tools":         row.get("Software / Tools Used", "").strip(),
+            "design_decisions":     row.get("Key Design Decisions", "").strip(),
+            "design_manufacturing": row.get("Manufacturing / Material Considerations", "").strip(),
+            "design_challenges":    row.get("Challenges Faced & Solutions", "").strip(),
+            "design_cad_files":     row.get("Google Drive Link for CAD / Design Files", "").strip(),
+            "design_renders":       row.get("Google Drive Link for Renders / Drawings", "").strip(),
+            "design_video":         row.get("Google Drive Link for Explanation Video or Presentation", "").strip(),
+            "design_simulation":    row.get("Simulation Report Link", "").strip(),
+            "design_prototype":     row.get("Prototype Photos Link", "").strip(),
+            # map to generic fields
+            "assignment":   row.get("Assignment Submitted", "").strip(),
+            "description":  row.get("Brief Description of Design Approach", "").strip(),
+            "tech_stack":   row.get("Software / Tools Used", "").strip(),
+            "features":     row.get("Key Design Decisions", "").strip(),
+            "challenges":   row.get("Challenges Faced & Solutions", "").strip(),
+        })
+
+    # ── Smart Glasses & IoT Application Developer ─────────────────────────────
+    elif "IoT" in role or "Smart Glasses" in role or "Glasses" in role:
+        parsed.update({
+            "iot_description": row.get("  Brief Description of Your Submission  ", "").strip(),
+            "iot_tech":        row.get("  Technologies / Frameworks Used  ", "").strip(),
+            "iot_protocol":    row.get("Protocol Parser, BLE Communication & Packet Handling Approach ", "").strip(),
+            "iot_simulator":   row.get("Simulator / Visualization Features Implemented ", "").strip(),
+            "iot_testing":     row.get("  Testing & Validation Approach  ", "").strip(),
+            "iot_challenges":  row.get("  Challenges Faced & Solutions  ", "").strip(),
+            "iot_github":      row.get("  Public GitHub Repository URL  ", "").strip(),
+            "iot_demo":        row.get("  Google Drive Link for Demo Video & Screenshots  ", "").strip(),
+            "iot_build":       row.get("Simulator Build / Hosted Demo Link ", "").strip(),
+            # map to generic fields
+            "description":  row.get("  Brief Description of Your Submission  ", "").strip(),
+            "tech_stack":   row.get("  Technologies / Frameworks Used  ", "").strip(),
+            "features":     row.get("Simulator / Visualization Features Implemented ", "").strip(),
+            "challenges":   row.get("  Challenges Faced & Solutions  ", "").strip(),
+            "github":       row.get("  Public GitHub Repository URL  ", "").strip(),
+            "demo_video":   row.get("  Google Drive Link for Demo Video & Screenshots  ", "").strip(),
+            "deployment":   row.get("Simulator Build / Hosted Demo Link ", "").strip(),
+        })
+
+    return parsed
 
 def import_csv(fileobj):
     """
@@ -123,7 +234,13 @@ def import_csv(fileobj):
                 for field in ("name","college","phone","role","timestamp","assignment",
                               "description","tech_stack","features","challenges",
                               "github","demo_video","screenshots","deployment",
-                              "learning","ai_usage","declaration"):
+                              "learning","references","ai_usage","declaration",
+                              "vr_description","vr_tools","vr_features","vr_architecture","vr_performance","vr_apk",
+                              "design_assignment","design_description","design_tools","design_decisions",
+                              "design_manufacturing","design_challenges","design_cad_files","design_renders",
+                              "design_video","design_simulation","design_prototype",
+                              "iot_description","iot_tech","iot_protocol","iot_simulator","iot_testing",
+                              "iot_challenges","iot_github","iot_demo","iot_build"):
                     existing[field] = parsed[field]
                 updated_count += 1
 
