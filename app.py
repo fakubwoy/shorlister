@@ -140,8 +140,8 @@ def _parse_row(row):
     # ── VR & Clinical App Developer ───────────────────────────────────────────
     elif "VR" in role or "Clinical" in role:
         parsed.update({
-            "github":          row.get("GitHub Repository URL", "").strip(),
-            "demo_video":      row.get("Google Drive Link for Demo Video", "").strip(),
+            "github":          row.get("GitHub Repository URL.1", "").strip(),
+            "demo_video":      row.get("Google Drive Link for Demo Video.1", "").strip(),
             "screenshots":     row.get("Google Drive Link for Screenshots / Demo Media ", "").strip(),
             "vr_description":  row.get("Brief Description of VR Experience", "").strip(),
             "vr_tools":        row.get("Tools / Engines Used", "").strip(),

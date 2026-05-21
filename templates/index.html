@@ -401,13 +401,16 @@ function renderDetail(key) {
     const href = url.startsWith('http') ? url : 'https://' + url;
     links.push(`<a class="lchip" href="${href}" target="_blank">${label}</a>`);
   };
-  lnk(c.deployment,    '↗ Live Demo');
-  lnk(c.iot_build,     '↗ Simulator Demo');
-  lnk(c.screenshots,   '📸 Screenshots');
-  lnk(c.github,        '⌥ GitHub');
-  lnk(c.iot_github,    '⌥ GitHub');
-  lnk(c.demo_video,    '▶ Demo Video');
-  lnk(c.iot_demo,      '▶ Demo / Screenshots');
+  lnk(c.deployment,        '↗ Live Demo');
+  lnk(c.iot_build,         '↗ Simulator Demo');
+  lnk(c.screenshots,       '📸 Screenshots');
+  lnk(c.vr_screenshots,    '📸 Screenshots / Media');
+  lnk(c.github,            '⌥ GitHub');
+  lnk(c.iot_github,        '⌥ GitHub');
+  lnk(c.vr_github,         '⌥ GitHub');
+  lnk(c.demo_video,        '▶ Demo Video');
+  lnk(c.vr_demo,           '▶ Demo Video');
+  lnk(c.iot_demo,          '▶ Demo / Screenshots');
   lnk(c.design_cad_files,  '📁 CAD Files');
   lnk(c.design_renders,    '🖼 Renders');
   lnk(c.design_video,      '▶ Design Video');
@@ -442,6 +445,7 @@ function renderDetail(key) {
 
   if (role.includes('Full Stack') || role.includes('AI Developer')) {
     roleBody = `
+      ${sec('Assignment Submitted', c.assignment)}
       ${sec('Project Description', c.description)}
       <div class="two-col">
         <div class="sec"><div class="sec-label">Tech Stack</div><div class="tags">${tags || '<span style="color:var(--muted)">—</span>'}</div></div>
@@ -519,9 +523,10 @@ function renderDetail(key) {
   <div class="detail-body">
     ${roleBody}
     <div class="two-col">
-      ${c.learning ? `<div class="sec"><div class="sec-label">What they learned</div><div class="sec-text">${c.learning.substring(0,400)}${c.learning.length>400?'…':''}</div></div>` : ''}
-      ${c.ai_usage ? `<div class="sec"><div class="sec-label">AI tool usage</div><div class="sec-text">${c.ai_usage.substring(0,400)}${c.ai_usage.length>400?'…':''}</div></div>` : ''}
+      ${c.learning ? `<div class="sec"><div class="sec-label">What they learned</div><div class="sec-text">${c.learning}</div></div>` : ''}
+      ${c.ai_usage ? `<div class="sec"><div class="sec-label">AI tool usage</div><div class="sec-text">${c.ai_usage}</div></div>` : ''}
     </div>
+    ${c.references ? `<div class="sec"><div class="sec-label">References / Tutorials / Tools Used</div><div class="sec-text">${c.references}</div></div>` : ''}
     <div class="sec">
       <div class="sec-label">Shared Notes</div>
       <textarea class="note-area" id="note-${key}" placeholder="Add shared notes visible to all reviewers…">${note}</textarea>
@@ -607,8 +612,8 @@ async function runAI(key) {
     aiSystem = 'You are a technical recruiter reviewing Smart Glasses / IoT developer submissions for a startup. Be direct and sharp. Assess: (1) depth of BLE/protocol implementation and simulator quality, (2) testing rigour and engineering thinking, (3) what genuinely stands out or is missing, (4) recommendation: Strong Shortlist / Shortlist / Maybe / Pass. Plain text only, no markdown.';
     aiContent = `Candidate: ${c.name} (${c.college})\nRole: ${role}\nOverview: ${c.iot_description || c.description}\nTech: ${c.iot_tech || c.tech_stack}\nProtocol/BLE Approach: ${c.iot_protocol}\nSimulator Features: ${c.iot_simulator || c.features}\nTesting: ${c.iot_testing}\nChallenges: ${c.iot_challenges || c.challenges}\nLearning: ${c.learning}`;
   } else {
-    aiSystem = 'You are a technical recruiter reviewing fullstack/AI developer submissions for a startup. Be direct and sharp. Give a 3-4 sentence assessment covering: (1) technical depth and stack sophistication, (2) what genuinely stands out, (3) any gaps or red flags, (4) a clear recommendation: Strong Shortlist / Shortlist / Maybe / Pass. Plain text only, no markdown.';
-    aiContent = `Candidate: ${c.name} (${c.college})\nProject: ${c.description}\nStack: ${c.tech_stack}\nFeatures: ${c.features}\nLearning: ${c.learning}\nAI usage: ${c.ai_usage}`;
+    aiSystem = 'You are a technical recruiter reviewing fullstack/AI developer submissions for a startup. Be direct and sharp. Give a thorough assessment covering: (1) technical depth and stack sophistication, (2) what genuinely stands out, (3) any gaps or red flags, (4) a clear recommendation: Strong Shortlist / Shortlist / Maybe / Pass. Plain text only, no markdown.';
+    aiContent = `Candidate: ${c.name} (${c.college})\nAssignment: ${c.assignment}\nProject: ${c.description}\nStack: ${c.tech_stack}\nFeatures: ${c.features}\nChallenges: ${c.challenges}\nLearning: ${c.learning}\nAI usage: ${c.ai_usage}\nReferences: ${c.references}`;
   }
 
   try {
@@ -620,7 +625,7 @@ async function runAI(key) {
         body: JSON.stringify({
           system_instruction: { parts: [{ text: aiSystem }] },
           contents: [{ role: 'user', parts: [{ text: aiContent }] }],
-          generationConfig: { maxOutputTokens: 1000 }
+          generationConfig: { maxOutputTokens: 2000 }
         })
       }
     );
